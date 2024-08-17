@@ -204,7 +204,7 @@ func TestSatisfiesExpression(t *testing.T) {
 		err            error
 	}{
 		{"MIT satisfies [MIT]", "MIT", []string{"MIT"}, "MIT", nil},
-		{"! Apache-3.0 satisfies [Apache-2.0-or-later]", "Apache-3.0", []string{"Apache-2.0-or-later"}, "", errors.New("unknown license 'Apache-3.0' at offset 0")},
+		{"BSD OR GPL satisfies [BSD]", "BSD OR GPL", []string{"BSD"}, "BSD", nil},
 		{"MIT AND GPL-2.0 AND ISC satisfies [ISC, GPL-2.0, MIT]",
 			"MIT AND GPL-2.0 AND ISC", []string{"ISC", "GPL-2.0", "MIT"}, "MIT AND GPL-2.0 AND ISC", nil},
 		{"MIT AND GPL-2.0 OR ISC satisfies [GPL-2.0, MIT]",
