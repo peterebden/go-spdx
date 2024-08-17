@@ -195,6 +195,33 @@ func TestSatisfies(t *testing.T) {
 	}
 }
 
+func TestSatisfiesExpression(t *testing.T) {
+	tests := []struct {
+		name           string
+		repoExpression string
+		allowedList    []string
+		satisfying     string
+		err            error
+	}{
+		{"MIT satisfies [MIT]", "MIT", []string{"MIT"}, "MIT", nil},
+		{"! Apache-3.0 satisfies [Apache-2.0-or-later]", "Apache-3.0", []string{"Apache-2.0-or-later"}, "", errors.New("unknown license 'Apache-3.0' at offset 0")},
+		{"MIT AND GPL-2.0 AND ISC satisfies [ISC, GPL-2.0, MIT]",
+			"MIT AND GPL-2.0 AND ISC", []string{"ISC", "GPL-2.0", "MIT"}, "MIT AND GPL-2.0 AND ISC", nil},
+		{"MIT AND GPL-2.0 OR ISC satisfies [GPL-2.0, MIT]",
+			"MIT AND GPL-2.0 OR ISC", []string{"GPL-2.0", "MIT"}, "MIT AND GPL-2.0", nil},
+		{"MIT OR GPL-2.0 satisfies [MIT]",
+			"MIT OR GPL-2.0", []string{"MIT"}, "MIT", nil},
+	}
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			satisfying, err := ExpressionSatisfies(test.repoExpression, test.allowedList)
+			assert.Equal(t, test.err, err)
+			assert.Equal(t, test.satisfying, satisfying)
+		})
+	}
+}
+
 func TestExpand(t *testing.T) {
 	// TODO: Add tests for licenses that include plus and/or exception.
 	// TODO: Add tests for license ref and document ref.
@@ -2409,4 +2436,9 @@ func ExampleValidateLicenses_oneBad() {
 func ExampleValidateLicenses_allBad() {
 	fmt.Println(ValidateLicenses([]string{"MTI", "Apache--2.0", "GPL"}))
 	// Output: false [MTI Apache--2.0 GPL]
+}
+
+func ExampleExpressionSatisfies() {
+	fmt.Println(ExpressionSatisfies("MIT AND Apache-2.0 OR GPL-2.0", []string{"MIT", "Apache-2.0"}))
+	// Output: MIT AND Apache-2.0 <nil>
 }

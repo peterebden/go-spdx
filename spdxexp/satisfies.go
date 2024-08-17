@@ -3,6 +3,7 @@ package spdxexp
 import (
 	"errors"
 	"sort"
+	"strings"
 )
 
 // ValidateLicenses checks if given licenses are valid according to spdx.
@@ -24,30 +25,58 @@ func ValidateLicenses(licenses []string) (bool, []string) {
 // Returns true if allowed list satisfies test license expression; otherwise, false.
 // Returns error if error occurs during processing.
 func Satisfies(testExpression string, allowedList []string) (bool, error) {
+	nodes, err := satisfies(testExpression, allowedList, true)
+	return nodes != nil, err
+}
+
+// ExpressionSatisfies determines if the allowed list of licenses satisfies the test license expression.
+// Returns the expression that was satisfied if the allowed list does satisfy any part of the
+// license expression, otherwise the empty string.
+// Returns error if error occurs during processing.
+func ExpressionSatisfies(testExpression string, allowedList []string) (string, error) {
+	nodes, err := satisfies(testExpression, allowedList, false)
+	if err != nil {
+		return "", err
+	}
+	var buf strings.Builder
+	for i, node := range nodes {
+		if i != 0 {
+			buf.WriteString(" AND ")
+		}
+		s := node.reconstructedLicenseString()
+		if s == nil {
+			return "", nil
+		}
+		buf.WriteString(*s)
+	}
+	return buf.String(), nil
+}
+
+func satisfies(testExpression string, allowedList []string, withDeepSort bool) ([]*node, error) {
 	expressionNode, err := parse(testExpression)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 	if len(allowedList) == 0 {
-		return false, errors.New("allowedList requires at least one element, but is empty")
+		return nil, errors.New("allowedList requires at least one element, but is empty")
 	}
 	allowedNodes, err := stringsToNodes(allowedList)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 	sortAndDedup(allowedNodes)
 
-	expandedExpression := expressionNode.expand(true)
+	expandedExpression := expressionNode.expand(withDeepSort)
 
 	for _, expressionPart := range expandedExpression {
 		if isCompatible(expressionPart, allowedNodes) {
 			// return once any expressionPart is compatible with the allow list
 			// * each part is an array of licenses that are ANDed, meaning all have to be on the allowedList
 			// * the parts are ORed, meaning only one of the parts need to be compatible
-			return true, nil
+			return expressionPart, nil
 		}
 	}
-	return false, nil
+	return nil, nil
 }
 
 // stringsToNodes converts an array of single license strings to to an array of license nodes.
