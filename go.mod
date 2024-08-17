@@ -1,4 +1,4 @@
-module github.com/github/go-spdx/v2
+module github.com/peterebden/go-spdx/v2
 
 retract v2.3.0 // Compatibility issues with go 1.22
 
