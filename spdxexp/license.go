@@ -3,7 +3,7 @@ package spdxexp
 import (
 	"strings"
 
-	"github.com/peterebden/go-spdx/v2/spdxexp/spdxlicenses"
+	"github.com/github/go-spdx/v2/spdxexp/spdxlicenses"
 )
 
 // activeLicense returns true if the id is an active license.
